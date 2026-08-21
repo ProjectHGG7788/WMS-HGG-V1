@@ -26,6 +26,7 @@ import {
 import { useInventory } from '../context/InventoryContext';
 import { useAuth } from '../context/AuthContext';
 import { MovementSubType, StockTransaction } from '../types';
+import { formatNumber, formatCbm, formatCbmValue } from '../utils/formatters';
 
 interface MovementItemRow {
   sku: string;
@@ -662,7 +663,7 @@ export const MovementManager: React.FC = () => {
                 const currentStock = selectedItem?.stock || 0;
                 const unitName = selectedItem?.unit || 'Pcs';
                 const cbmPerUnit = selectedItem?.cbmPerUnit || 0;
-                const rowTotalCbm = (cbmPerUnit * (Number(row.quantity) || 0)).toFixed(3);
+                const rowTotalCbm = formatCbm(cbmPerUnit * (Number(row.quantity) || 0));
 
                 return (
                   <div
@@ -679,7 +680,7 @@ export const MovementManager: React.FC = () => {
                         </span>
                         {selectedItem && (
                           <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded">
-                            Stok Saat Ini: <strong className="text-cyan-400">{currentStock} {unitName}</strong>
+                            Stok Saat Ini: <strong className="text-cyan-400">{formatNumber(currentStock)} {unitName}</strong>
                           </span>
                         )}
                       </div>
@@ -782,7 +783,7 @@ export const MovementManager: React.FC = () => {
                           className="w-full bg-[#14161B] border border-slate-800 rounded-lg px-2.5 py-2 text-xs font-bold text-cyan-300 focus:outline-none focus:border-cyan-500 text-center"
                         />
                         <div className="text-[10px] text-slate-500 mt-1 text-center">
-                          Total: ~{rowTotalCbm} m³
+                          Total: ~{rowTotalCbm}
                         </div>
                       </div>
                     </div>
@@ -819,17 +820,17 @@ export const MovementManager: React.FC = () => {
             <div className="flex items-center gap-6">
               <div>
                 <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Total Baris SKU</div>
-                <div className="text-base font-bold text-white">{itemRows.length} SKU</div>
+                <div className="text-base font-bold text-white">{formatNumber(itemRows.length)} SKU</div>
               </div>
               <div className="h-8 w-px bg-slate-800" />
               <div>
                 <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Total Qty Pindah</div>
-                <div className="text-base font-bold text-cyan-400">{totalQuantity} Unit</div>
+                <div className="text-base font-bold text-cyan-400">{formatNumber(totalQuantity)} Unit</div>
               </div>
               <div className="h-8 w-px bg-slate-800" />
               <div>
                 <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Estimasi Kubikasi</div>
-                <div className="text-base font-bold text-slate-300">{totalCbm.toFixed(3)} m³</div>
+                <div className="text-base font-bold text-slate-300">{formatCbm(totalCbm)}</div>
               </div>
             </div>
 
@@ -1074,7 +1075,7 @@ export const MovementManager: React.FC = () => {
                 </div>
                 <div className="p-3 bg-[#0A0B0E] rounded-lg border border-slate-800">
                   <div className="text-[10px] uppercase text-slate-500 font-semibold">Total Qty</div>
-                  <div className="text-xs font-bold text-white mt-0.5">{selectedTxDetail.quantity} Unit</div>
+                  <div className="text-xs font-bold text-white mt-0.5">{formatNumber(selectedTxDetail.quantity)} Unit</div>
                 </div>
                 <div className="p-3 bg-[#0A0B0E] rounded-lg border border-slate-800">
                   <div className="text-[10px] uppercase text-slate-500 font-semibold">Status</div>
@@ -1114,7 +1115,7 @@ export const MovementManager: React.FC = () => {
                           <td className="py-2.5 px-3 text-white">{item.productName}</td>
                           <td className="py-2.5 px-3 font-mono text-amber-300 text-[11px]">{item.fromLocationCode || selectedTxDetail.fromLocation}</td>
                           <td className="py-2.5 px-3 font-mono text-emerald-300 text-[11px]">{item.toLocationCode || selectedTxDetail.toLocation}</td>
-                          <td className="py-2.5 px-3 text-right font-bold text-white">{item.quantity} {item.unit}</td>
+                          <td className="py-2.5 px-3 text-right font-bold text-white">{formatNumber(item.quantity)} {item.unit}</td>
                           <td className="py-2.5 px-3 text-slate-400 text-[11px]">{item.notes || '-'}</td>
                         </tr>
                       ))
@@ -1125,7 +1126,7 @@ export const MovementManager: React.FC = () => {
                         <td className="py-2.5 px-3 text-white">{selectedTxDetail.productName}</td>
                         <td className="py-2.5 px-3 font-mono text-amber-300 text-[11px]">{selectedTxDetail.fromLocation}</td>
                         <td className="py-2.5 px-3 font-mono text-emerald-300 text-[11px]">{selectedTxDetail.toLocation}</td>
-                        <td className="py-2.5 px-3 text-right font-bold text-white">{selectedTxDetail.quantity} {selectedTxDetail.unit}</td>
+                        <td className="py-2.5 px-3 text-right font-bold text-white">{formatNumber(selectedTxDetail.quantity)} {selectedTxDetail.unit}</td>
                         <td className="py-2.5 px-3 text-slate-400 text-[11px]">{selectedTxDetail.notes || '-'}</td>
                       </tr>
                     )}
@@ -1273,7 +1274,7 @@ export const MovementManager: React.FC = () => {
                             {itm.batchLot || '-'}
                           </td>
                           <td className="py-2 px-3 text-right font-black">
-                            {itm.quantity} {itm.unit}
+                            {formatNumber(itm.quantity)} {itm.unit}
                           </td>
                         </tr>
                       ))
@@ -1292,7 +1293,7 @@ export const MovementManager: React.FC = () => {
                           {printedTransaction.batchLot || '-'}
                         </td>
                         <td className="py-2 px-3 text-right font-black">
-                          {printedTransaction.quantity} {printedTransaction.unit}
+                          {formatNumber(printedTransaction.quantity)} {printedTransaction.unit}
                         </td>
                       </tr>
                     )}
@@ -1303,7 +1304,7 @@ export const MovementManager: React.FC = () => {
                         Total Keseluruhan Barang Dipindahkan:
                       </td>
                       <td className="py-2.5 px-3 text-right text-slate-900 text-sm font-black">
-                        {printedTransaction.quantity} Unit
+                        {formatNumber(printedTransaction.quantity)} Unit
                       </td>
                     </tr>
                   </tfoot>

@@ -115,25 +115,25 @@ export const StockOpnameAudit: React.FC = () => {
         <div className="p-4 rounded-xl bg-[#14161B] border border-slate-800">
           <div className="text-[11px] text-slate-500 uppercase font-semibold">Total SKU Di-audit</div>
           <div className="font-mono text-xl font-bold text-white mt-1">
-            {opnameSession.items.length} SKU
+            {formatNumber(opnameSession.items.length)} SKU
           </div>
         </div>
         <div className="p-4 rounded-xl bg-[#14161B] border border-slate-800">
           <div className="text-[11px] text-slate-500 uppercase font-semibold">SKU Sesuai (100%)</div>
           <div className="font-mono text-xl font-bold text-emerald-400 mt-1">
-            {opnameSession.items.length - totalVariancesCount} SKU
+            {formatNumber(opnameSession.items.length - totalVariancesCount)} SKU
           </div>
         </div>
         <div className="p-4 rounded-xl bg-[#14161B] border border-slate-800">
           <div className="text-[11px] text-slate-500 uppercase font-semibold">SKU Selisih (Discrepancy)</div>
           <div className="font-mono text-xl font-bold text-rose-500 mt-1">
-            {totalVariancesCount} SKU
+            {formatNumber(totalVariancesCount)} SKU
           </div>
         </div>
         <div className="p-4 rounded-xl bg-[#14161B] border border-slate-800">
           <div className="text-[11px] text-slate-500 uppercase font-semibold">Total Selisih Fisik</div>
           <div className={`font-mono text-xl font-bold mt-1 truncate ${totalVarianceUnits < 0 ? 'text-rose-500' : totalVarianceUnits > 0 ? 'text-indigo-400' : 'text-emerald-400'}`}>
-            {totalVarianceUnits > 0 ? `+${totalVarianceUnits}` : totalVarianceUnits} Unit
+            {totalVarianceUnits > 0 ? `+${formatNumber(totalVarianceUnits)}` : formatNumber(totalVarianceUnits)} Unit
           </div>
         </div>
       </div>
@@ -165,7 +165,7 @@ export const StockOpnameAudit: React.FC = () => {
               selectedDiscrepancyFilter === 'ALL' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
-            Semua ({opnameSession.items.length})
+            Semua ({formatNumber(opnameSession.items.length)})
           </button>
           <button
             onClick={() => setSelectedDiscrepancyFilter('VARIANCE_ONLY')}
@@ -173,7 +173,7 @@ export const StockOpnameAudit: React.FC = () => {
               selectedDiscrepancyFilter === 'VARIANCE_ONLY' ? 'bg-rose-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
-            Ada Selisih ({totalVariancesCount})
+            Ada Selisih ({formatNumber(totalVariancesCount)})
           </button>
           <button
             onClick={() => setSelectedDiscrepancyFilter('MATCH_ONLY')}
@@ -224,7 +224,7 @@ export const StockOpnameAudit: React.FC = () => {
 
                     {/* System Expected Stock */}
                     <td className="py-3 px-5 text-center font-mono font-bold text-slate-400">
-                      {item.systemStock}
+                      {formatNumber(item.systemStock)}
                     </td>
 
                     {/* Physical Counted Stock (Editable Input) */}
@@ -250,9 +250,9 @@ export const StockOpnameAudit: React.FC = () => {
                           <Check className="w-3.5 h-3.5" /> 0 (Pas)
                         </span>
                       ) : item.difference > 0 ? (
-                        <span className="text-indigo-400">+{item.difference} (Surplus)</span>
+                        <span className="text-indigo-400">+{formatNumber(item.difference)} (Surplus)</span>
                       ) : (
-                        <span className="text-rose-500">{item.difference} (Defisit)</span>
+                        <span className="text-rose-500">{formatNumber(item.difference)} (Defisit)</span>
                       )}
                     </td>
 

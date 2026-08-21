@@ -18,6 +18,7 @@ import { useInventory } from '../context/InventoryContext';
 import { WarehouseLocator } from '../types';
 import { AddLocatorModal } from './AddLocatorModal';
 import { LocatorBarcodeModal } from './LocatorBarcodeModal';
+import { formatNumber } from '../utils/formatters';
 
 export const SKULocatorVisualizer: React.FC = () => {
   const { 
@@ -162,7 +163,7 @@ export const SKULocatorVisualizer: React.FC = () => {
                 onChange={(e) => setLocatorFilterWarehouse(e.target.value)}
                 className="bg-[#0A0B0E] border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500"
               >
-                <option value="ALL">Semua Gudang ({locators.length})</option>
+                <option value="ALL">Semua Gudang ({formatNumber(locators.length)})</option>
                 {uniqueWarehouseCodes.map((code) => (
                   <option key={code} value={code}>{code}</option>
                 ))}
@@ -288,7 +289,7 @@ export const SKULocatorVisualizer: React.FC = () => {
                         {isOccupied ? (
                           <div className="space-y-0.5">
                             <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-semibold">
-                              Terisi ({occupiedStock} Unit)
+                              Terisi ({formatNumber(occupiedStock)} Unit)
                             </span>
                             {skuCode && (
                               <div className="text-[10px] font-mono text-slate-400 truncate max-w-[140px]">

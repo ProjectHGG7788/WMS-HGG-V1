@@ -1,11 +1,22 @@
-// Format quantity with units and Indonesian thousands separator
+// Format quantity with units and Indonesian thousands separator (titik untuk ribuan, contoh: 1.420 Unit)
 export function formatQuantity(qty: number, unit: string = 'Unit'): string {
-  return `${new Intl.NumberFormat('id-ID').format(qty)} ${unit}`;
+  if (isNaN(qty)) return `0 ${unit}`;
+  return `${new Intl.NumberFormat('id-ID').format(Math.round(qty))} ${unit}`;
 }
 
-// Format numbers with Indonesian thousands separator
+// Format numbers with Indonesian thousands separator (titik untuk ribuan, contoh: 1.420, 25.000)
 export function formatNumber(num: number): string {
+  if (isNaN(num)) return '0';
   return new Intl.NumberFormat('id-ID').format(num);
+}
+
+// Format decimal numbers with Indonesian comma for decimal & dot for thousands (contoh: 12,5)
+export function formatDecimal(val: number, decimals: number = 2): string {
+  if (isNaN(val)) return '0';
+  return new Intl.NumberFormat('id-ID', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(val);
 }
 
 // Calculate CBM (Cubic Meters) from Length x Width x Height in cm
@@ -18,10 +29,29 @@ export function calculateCbm(lengthCm: number, widthCm: number, heightCm: number
   return Number(cbm.toFixed(4));
 }
 
-// Format CBM with clean decimal representation (usually 3 decimals e.g. 0.045 m³)
+// Format CBM with Indonesian comma as decimal separator (koma untuk CBM / desimal, contoh: 0,045 m³, 18,452 m³)
 export function formatCbm(cbm: number, decimals: number = 3): string {
-  if (isNaN(cbm) || cbm === 0) return '0.000 m³';
-  return `${Number(cbm).toFixed(decimals)} m³`;
+  if (isNaN(cbm) || cbm === 0) {
+    const zeros = '0'.repeat(decimals);
+    return `0,${zeros} m³`;
+  }
+  const formatted = new Intl.NumberFormat('id-ID', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(cbm);
+  return `${formatted} m³`;
+}
+
+// Format CBM value without unit suffix (contoh: 0,045)
+export function formatCbmValue(cbm: number, decimals: number = 3): string {
+  if (isNaN(cbm) || cbm === 0) {
+    const zeros = '0'.repeat(decimals);
+    return `0,${zeros}`;
+  }
+  return new Intl.NumberFormat('id-ID', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(cbm);
 }
 
 // Normalize barcode: if empty, undefined, null, or whitespace, returns '0'

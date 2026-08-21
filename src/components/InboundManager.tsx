@@ -21,6 +21,7 @@ import {
 import { useInventory } from '../context/InventoryContext';
 import { useAuth } from '../context/AuthContext';
 import { InboundSubType, StockTransaction } from '../types';
+import { formatNumber } from '../utils/formatters';
 
 interface InboundItemRow {
   sku: string;
@@ -304,17 +305,17 @@ export const InboundManager: React.FC = () => {
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="p-4 rounded-xl bg-[#14161B] border border-slate-800">
           <div className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">Total Unit Masuk</div>
-          <div className="text-xl font-bold text-white mt-1 font-mono">{totalInboundUnits} <span className="text-xs font-normal text-slate-400">Unit</span></div>
+          <div className="text-xl font-bold text-white mt-1 font-mono">{formatNumber(totalInboundUnits)} <span className="text-xs font-normal text-slate-400">Unit</span></div>
           <div className="text-[10px] text-emerald-400 mt-1">Akumulasi seluruh putaway</div>
         </div>
         <div className="p-4 rounded-xl bg-[#14161B] border border-slate-800">
           <div className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">Penerimaan Vendor Lokal</div>
-          <div className="text-xl font-bold text-emerald-400 mt-1 font-mono">{localCount} <span className="text-xs font-normal text-slate-400">Trx</span></div>
+          <div className="text-xl font-bold text-emerald-400 mt-1 font-mono">{formatNumber(localCount)} <span className="text-xs font-normal text-slate-400">Trx</span></div>
           <div className="text-[10px] text-slate-400 mt-1">Supplier produsen domestik</div>
         </div>
         <div className="p-4 rounded-xl bg-[#14161B] border border-slate-800">
           <div className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">Penerimaan Import</div>
-          <div className="text-xl font-bold text-blue-400 mt-1 font-mono">{importCount} <span className="text-xs font-normal text-slate-400">Trx</span></div>
+          <div className="text-xl font-bold text-blue-400 mt-1 font-mono">{formatNumber(importCount)} <span className="text-xs font-normal text-slate-400">Trx</span></div>
           <div className="text-[10px] text-slate-400 mt-1">Kargo internasional & PIB</div>
         </div>
         <div className="p-4 rounded-xl bg-[#14161B] border border-slate-800">
@@ -566,7 +567,7 @@ export const InboundManager: React.FC = () => {
                           >
                             {items.map((itm) => (
                               <option key={itm.id} value={itm.sku}>
-                                [{itm.sku}] {itm.name} — Stok Saat Ini: {itm.stock} {itm.unit}
+                                [{itm.sku}] {itm.name} — Stok Saat Ini: {formatNumber(itm.stock)} {itm.unit}
                               </option>
                             ))}
                           </select>
@@ -629,8 +630,8 @@ export const InboundManager: React.FC = () => {
             {/* Inbound Summary Footer */}
             <div className="p-4 rounded-lg bg-[#0A0B0E] border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
               <div className="space-y-1">
-                <div className="text-slate-400">Total Baris Penerimaan: <strong className="text-white font-mono">{itemRows.length} SKU</strong></div>
-                <div className="text-slate-400">Total Kuantitas Masuk: <strong className="text-emerald-400 font-mono font-bold text-sm">+{totalQuantity} Unit</strong></div>
+                <div className="text-slate-400">Total Baris Penerimaan: <strong className="text-white font-mono">{formatNumber(itemRows.length)} SKU</strong></div>
+                <div className="text-slate-400">Total Kuantitas Masuk: <strong className="text-emerald-400 font-mono font-bold text-sm">+{formatNumber(totalQuantity)} Unit</strong></div>
               </div>
 
               <div className="flex items-center gap-3">
@@ -752,7 +753,7 @@ export const InboundManager: React.FC = () => {
                             <div className="text-slate-300 truncate max-w-[200px]">{tx.productName}</div>
                           </td>
                           <td className="p-3 text-right font-mono font-bold text-emerald-400">
-                            +{tx.quantity} <span className="text-[10px] font-normal text-slate-400">{tx.unit}</span>
+                            +{formatNumber(tx.quantity)} <span className="text-[10px] font-normal text-slate-400">{tx.unit}</span>
                           </td>
                           <td className="p-3">
                             <span className="font-mono text-slate-400 text-[11px] px-1.5 py-0.5 rounded bg-[#0A0B0E] border border-slate-800">
@@ -844,7 +845,7 @@ export const InboundManager: React.FC = () => {
                         <td className="p-2 border border-slate-300">{itm.productName}</td>
                         <td className="p-2 border border-slate-300 font-mono">{itm.batchLot || printedTransaction.batchLot || 'LOT-2026'}</td>
                         <td className="p-2 border border-slate-300 font-mono">{itm.locationCode || 'Zona A'}</td>
-                        <td className="p-2 border border-slate-300 text-right font-mono font-bold text-emerald-700">+{itm.quantity} {itm.unit}</td>
+                        <td className="p-2 border border-slate-300 text-right font-mono font-bold text-emerald-700">+{formatNumber(itm.quantity)} {itm.unit}</td>
                         <td className="p-2 border border-slate-300 text-center text-[10px] font-bold text-emerald-700">QC PASSED</td>
                       </tr>
                     ))
@@ -855,7 +856,7 @@ export const InboundManager: React.FC = () => {
                       <td className="p-2 border border-slate-300">{printedTransaction.productName}</td>
                       <td className="p-2 border border-slate-300 font-mono">{printedTransaction.batchLot || 'LOT-2026-08'}</td>
                       <td className="p-2 border border-slate-300 font-mono">{printedTransaction.toLocation || 'Zona A'}</td>
-                      <td className="p-2 border border-slate-300 text-right font-mono font-bold text-emerald-700">+{printedTransaction.quantity} {printedTransaction.unit}</td>
+                      <td className="p-2 border border-slate-300 text-right font-mono font-bold text-emerald-700">+{formatNumber(printedTransaction.quantity)} {printedTransaction.unit}</td>
                       <td className="p-2 border border-slate-300 text-center text-[10px] font-bold text-emerald-700">QC PASSED</td>
                     </tr>
                   )}

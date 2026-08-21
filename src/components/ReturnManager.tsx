@@ -22,6 +22,7 @@ import {
 import { useInventory } from '../context/InventoryContext';
 import { useAuth } from '../context/AuthContext';
 import { ReturnSubType, ReturnQCCondition, StockTransaction } from '../types';
+import { formatNumber } from '../utils/formatters';
 
 interface ReturnItemRow {
   sku: string;
@@ -323,7 +324,7 @@ export const ReturnManager: React.FC = () => {
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <Clock className="w-4 h-4" /> Riwayat Retur ({returnTransactions.length})
+            <Clock className="w-4 h-4" /> Riwayat Retur ({formatNumber(returnTransactions.length)})
           </button>
         </div>
       </div>
@@ -332,32 +333,32 @@ export const ReturnManager: React.FC = () => {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <div className="p-4 rounded-xl bg-[#14161B] border border-slate-800">
           <div className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">Total Unit Retur</div>
-          <div className="text-xl font-bold text-white mt-1 font-mono">{totalReturnUnits} <span className="text-xs font-normal text-slate-400">Unit</span></div>
+          <div className="text-xl font-bold text-white mt-1 font-mono">{formatNumber(totalReturnUnits)} <span className="text-xs font-normal text-slate-400">Unit</span></div>
           <div className="text-[10px] text-rose-400 mt-1">Total seluruh pengembalian</div>
         </div>
         <div className="p-4 rounded-xl bg-[#14161B] border border-slate-800">
           <div className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">Retur Customer</div>
-          <div className="text-xl font-bold text-rose-400 mt-1 font-mono">{customerReturnCount} <span className="text-xs font-normal text-slate-400">Trx</span></div>
+          <div className="text-xl font-bold text-rose-400 mt-1 font-mono">{formatNumber(customerReturnCount)} <span className="text-xs font-normal text-slate-400">Trx</span></div>
           <div className="text-[10px] text-slate-400 mt-1">Klaim garansi / salah kirim</div>
         </div>
         <div className="p-4 rounded-xl bg-[#14161B] border border-slate-800">
           <div className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">Retur Konsinyasi</div>
-          <div className="text-xl font-bold text-amber-400 mt-1 font-mono">{consignmentReturnCount} <span className="text-xs font-normal text-slate-400">Trx</span></div>
+          <div className="text-xl font-bold text-amber-400 mt-1 font-mono">{formatNumber(consignmentReturnCount)} <span className="text-xs font-normal text-slate-400">Trx</span></div>
           <div className="text-[10px] text-slate-400 mt-1">Tarik stok toko mitra</div>
         </div>
         <div className="p-4 rounded-xl bg-[#14161B] border border-slate-800">
           <div className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">Retur Pameran</div>
-          <div className="text-xl font-bold text-purple-400 mt-1 font-mono">{exhibitionReturnCount} <span className="text-xs font-normal text-slate-400">Trx</span></div>
+          <div className="text-xl font-bold text-purple-400 mt-1 font-mono">{formatNumber(exhibitionReturnCount)} <span className="text-xs font-normal text-slate-400">Trx</span></div>
           <div className="text-[10px] text-slate-400 mt-1">Display & sampel event</div>
         </div>
         <div className="p-4 rounded-xl bg-[#14161B] border border-slate-800">
           <div className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">QC Layak Restock</div>
-          <div className="text-xl font-bold text-emerald-400 mt-1 font-mono">{goodQCCount} <span className="text-xs font-normal text-slate-400">Trx</span></div>
+          <div className="text-xl font-bold text-emerald-400 mt-1 font-mono">{formatNumber(goodQCCount)} <span className="text-xs font-normal text-slate-400">Trx</span></div>
           <div className="text-[10px] text-emerald-400/80 mt-1">Masuk rak aktif</div>
         </div>
         <div className="p-4 rounded-xl bg-[#14161B] border border-slate-800">
           <div className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">QC Karantina/Afkir</div>
-          <div className="text-xl font-bold text-amber-400 mt-1 font-mono">{reworkQCCount + scrapQCCount} <span className="text-xs font-normal text-slate-400">Trx</span></div>
+          <div className="text-xl font-bold text-amber-400 mt-1 font-mono">{formatNumber(reworkQCCount + scrapQCCount)} <span className="text-xs font-normal text-slate-400">Trx</span></div>
           <div className="text-[10px] text-slate-400 mt-1">{reworkQCCount} Rework / {scrapQCCount} Scrap</div>
         </div>
       </div>
@@ -658,8 +659,8 @@ export const ReturnManager: React.FC = () => {
             {/* Return Summary Footer */}
             <div className="p-4 rounded-lg bg-[#0A0B0E] border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
               <div className="space-y-1">
-                <div className="text-slate-400">Total Unit Diretur: <strong className="text-white font-mono">{totalQuantity} Unit</strong></div>
-                <div className="text-emerald-400">Restock Langsung ke Rak Aktif: <strong className="font-mono font-bold">+{goodRestockQuantity} Unit</strong></div>
+                <div className="text-slate-400">Total Unit Diretur: <strong className="text-white font-mono">{formatNumber(totalQuantity)} Unit</strong></div>
+                <div className="text-emerald-400">Restock Langsung ke Rak Aktif: <strong className="font-mono font-bold">+{formatNumber(goodRestockQuantity)} Unit</strong></div>
               </div>
 
               <button
@@ -781,7 +782,7 @@ export const ReturnManager: React.FC = () => {
                             <div className="text-slate-300 truncate max-w-[200px]">{tx.productName}</div>
                           </td>
                           <td className="p-3 text-right font-mono font-bold text-white">
-                            {tx.quantity} <span className="text-[10px] font-normal text-slate-400">{tx.unit}</span>
+                            {formatNumber(tx.quantity)} <span className="text-[10px] font-normal text-slate-400">{tx.unit}</span>
                           </td>
                           <td className="p-3">
                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
@@ -877,7 +878,7 @@ export const ReturnManager: React.FC = () => {
                         <td className="p-2 border border-slate-300 font-mono text-center">{i + 1}</td>
                         <td className="p-2 border border-slate-300 font-mono font-semibold">{itm.sku}</td>
                         <td className="p-2 border border-slate-300">{itm.productName}</td>
-                        <td className="p-2 border border-slate-300 text-right font-mono font-bold">{itm.quantity} {itm.unit}</td>
+                        <td className="p-2 border border-slate-300 text-right font-mono font-bold">{formatNumber(itm.quantity)} {itm.unit}</td>
                         <td className="p-2 border border-slate-300 font-semibold">
                           {qcConfig[(itm.qcCondition || 'GOOD_RESTOCK') as ReturnQCCondition]?.label}
                         </td>
@@ -889,7 +890,7 @@ export const ReturnManager: React.FC = () => {
                       <td className="p-2 border border-slate-300 font-mono text-center">1</td>
                       <td className="p-2 border border-slate-300 font-mono font-semibold">{printedTransaction.sku}</td>
                       <td className="p-2 border border-slate-300">{printedTransaction.productName}</td>
-                      <td className="p-2 border border-slate-300 text-right font-mono font-bold">{printedTransaction.quantity} {printedTransaction.unit}</td>
+                      <td className="p-2 border border-slate-300 text-right font-mono font-bold">{formatNumber(printedTransaction.quantity)} {printedTransaction.unit}</td>
                       <td className="p-2 border border-slate-300 font-semibold">
                         {qcConfig[(printedTransaction.qcCondition || 'GOOD_RESTOCK') as ReturnQCCondition]?.label}
                       </td>

@@ -22,7 +22,7 @@ import {
 import { useInventory } from '../context/InventoryContext';
 import { useAuth } from '../context/AuthContext';
 import { InventoryItem } from '../types';
-import { formatNumber, formatCbm, calculateCbm, calculateAgingDays, getAgingStatus, normalizeBarcode } from '../utils/formatters';
+import { formatNumber, formatCbm, formatCbmValue, formatDecimal, calculateCbm, calculateAgingDays, getAgingStatus, normalizeBarcode } from '../utils/formatters';
 import { BarcodeLabelGenerator } from './BarcodeLabelGenerator';
 
 export const InventoryTable: React.FC<{ onNavigateTab?: (tab: string) => void }> = ({ onNavigateTab }) => {
@@ -513,7 +513,7 @@ export const InventoryTable: React.FC<{ onNavigateTab?: (tab: string) => void }>
                   const agingDays = calculateAgingDays(item.lastInboundDate, item.lastUpdated);
                   const agingMeta = getAgingStatus(agingDays);
                   const isiDusVal = item.isiDus || 1;
-                  const dusEquiv = (item.stock / isiDusVal).toFixed(1);
+                  const dusEquiv = formatDecimal(item.stock / isiDusVal, 1);
 
                   return (
                     <tr key={item.id} className="hover:bg-slate-800/30 transition-colors group">
@@ -585,14 +585,14 @@ export const InventoryTable: React.FC<{ onNavigateTab?: (tab: string) => void }>
                           {formatNumber(item.stock)} <span className="text-[11px] font-normal text-slate-400">{item.unit}</span>
                         </div>
                         <div className="text-[10px] text-slate-500">
-                          &asymp; {dusEquiv} Dus (Min: {item.minStock})
+                          &asymp; {dusEquiv} Dus (Min: {formatNumber(item.minStock)})
                         </div>
                       </td>
 
                       {/* 8. Kubikasi (m3 manual 3 desimal) */}
                       <td className="py-3 px-4 text-right font-mono text-slate-300">
                         <div className="text-indigo-300 text-xs font-semibold">
-                          {itemCbm.toFixed(3)} <span className="text-[10px] text-slate-400 font-normal">m³/u</span>
+                          {formatCbmValue(itemCbm)} <span className="text-[10px] text-slate-400 font-normal">m³/u</span>
                         </div>
                         <div className="text-[10px] text-slate-400">
                           Total: <span className="text-slate-300 font-medium">{formatCbm(itemTotalCbm)}</span>

@@ -22,6 +22,7 @@ import {
 import { useInventory } from '../context/InventoryContext';
 import { useAuth } from '../context/AuthContext';
 import { OutboundSubType, StockTransaction } from '../types';
+import { formatNumber } from '../utils/formatters';
 
 interface OutboundItemRow {
   sku: string;
@@ -298,22 +299,22 @@ export const OutboundManager: React.FC = () => {
         </div>
         <div className="p-4 rounded-xl bg-[#14161B] border border-slate-800">
           <div className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">Order Reguler</div>
-          <div className="text-xl font-bold text-indigo-400 mt-1 font-mono">{regularCount} <span className="text-xs font-normal text-slate-400">Trx</span></div>
+          <div className="text-xl font-bold text-indigo-400 mt-1 font-mono">{formatNumber(regularCount)} <span className="text-xs font-normal text-slate-400">Trx</span></div>
           <div className="text-[10px] text-slate-400 mt-1">Customer / Sales B2B</div>
         </div>
         <div className="p-4 rounded-xl bg-[#14161B] border border-slate-800">
           <div className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">Konsinyasi</div>
-          <div className="text-xl font-bold text-amber-400 mt-1 font-mono">{consignmentCount} <span className="text-xs font-normal text-slate-400">Trx</span></div>
+          <div className="text-xl font-bold text-amber-400 mt-1 font-mono">{formatNumber(consignmentCount)} <span className="text-xs font-normal text-slate-400">Trx</span></div>
           <div className="text-[10px] text-slate-400 mt-1">Titip jual mitra retail</div>
         </div>
         <div className="p-4 rounded-xl bg-[#14161B] border border-slate-800">
           <div className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">Pameran & Event</div>
-          <div className="text-xl font-bold text-purple-400 mt-1 font-mono">{exhibitionCount} <span className="text-xs font-normal text-slate-400">Trx</span></div>
+          <div className="text-xl font-bold text-purple-400 mt-1 font-mono">{formatNumber(exhibitionCount)} <span className="text-xs font-normal text-slate-400">Trx</span></div>
           <div className="text-[10px] text-slate-400 mt-1">Display & Sampel demo</div>
         </div>
         <div className="p-4 rounded-xl bg-[#14161B] border border-slate-800">
           <div className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">Retur Vendor</div>
-          <div className="text-xl font-bold text-rose-400 mt-1 font-mono">{vendorReturnCount} <span className="text-xs font-normal text-slate-400">Trx</span></div>
+          <div className="text-xl font-bold text-rose-400 mt-1 font-mono">{formatNumber(vendorReturnCount)} <span className="text-xs font-normal text-slate-400">Trx</span></div>
           <div className="text-[10px] text-slate-400 mt-1">Pengembalian defect/expired</div>
         </div>
       </div>
@@ -565,7 +566,7 @@ export const OutboundManager: React.FC = () => {
                         <td className="p-3">
                           {selectedItem ? (
                             <span className={`font-mono font-bold ${selectedItem.stock <= 0 ? 'text-rose-400' : 'text-slate-300'}`}>
-                              {selectedItem.stock} {selectedItem.unit}
+                              {formatNumber(selectedItem.stock)} {selectedItem.unit}
                             </span>
                           ) : (
                             '-'
@@ -617,8 +618,8 @@ export const OutboundManager: React.FC = () => {
             {/* Picking Summary Footer */}
             <div className="p-4 rounded-lg bg-[#0A0B0E] border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
               <div className="space-y-1">
-                <div className="text-slate-400">Total Item Terpilih: <strong className="text-white font-mono">{itemRows.length} SKU</strong></div>
-                <div className="text-slate-400">Total Kuantitas Dispatch: <strong className="text-indigo-400 font-mono font-bold text-sm">{totalQuantity} Unit</strong></div>
+                <div className="text-slate-400">Total Item Terpilih: <strong className="text-white font-mono">{formatNumber(itemRows.length)} SKU</strong></div>
+                <div className="text-slate-400">Total Kuantitas Dispatch: <strong className="text-indigo-400 font-mono font-bold text-sm">{formatNumber(totalQuantity)} Unit</strong></div>
               </div>
 
               <div className="flex items-center gap-3">
@@ -750,7 +751,7 @@ export const OutboundManager: React.FC = () => {
                             <div className="text-slate-300 truncate max-w-[200px]">{tx.productName}</div>
                           </td>
                           <td className="p-3 text-right font-mono font-bold text-white">
-                            {tx.quantity} <span className="text-[10px] font-normal text-slate-400">{tx.unit}</span>
+                            {formatNumber(tx.quantity)} <span className="text-[10px] font-normal text-slate-400">{tx.unit}</span>
                           </td>
                           <td className="p-3">
                             <span className="font-mono text-slate-400 text-[11px] px-1.5 py-0.5 rounded bg-[#0A0B0E] border border-slate-800">
@@ -844,7 +845,7 @@ export const OutboundManager: React.FC = () => {
                         <td className="p-2 border border-slate-300 font-mono font-semibold">{itm.sku}</td>
                         <td className="p-2 border border-slate-300">{itm.productName}</td>
                         <td className="p-2 border border-slate-300 font-mono">{itm.locationCode || 'Zona A'}</td>
-                        <td className="p-2 border border-slate-300 text-right font-mono font-bold">{itm.quantity} {itm.unit}</td>
+                        <td className="p-2 border border-slate-300 text-right font-mono font-bold">{formatNumber(itm.quantity)} {itm.unit}</td>
                         <td className="p-2 border border-slate-300 text-center text-[10px] font-bold text-emerald-700">TERVERIFIKASI</td>
                       </tr>
                     ))
@@ -854,7 +855,7 @@ export const OutboundManager: React.FC = () => {
                       <td className="p-2 border border-slate-300 font-mono font-semibold">{printedTransaction.sku}</td>
                       <td className="p-2 border border-slate-300">{printedTransaction.productName}</td>
                       <td className="p-2 border border-slate-300 font-mono">{printedTransaction.fromLocation || 'Zona A'}</td>
-                      <td className="p-2 border border-slate-300 text-right font-mono font-bold">{printedTransaction.quantity} {printedTransaction.unit}</td>
+                      <td className="p-2 border border-slate-300 text-right font-mono font-bold">{formatNumber(printedTransaction.quantity)} {printedTransaction.unit}</td>
                       <td className="p-2 border border-slate-300 text-center text-[10px] font-bold text-emerald-700">TERVERIFIKASI</td>
                     </tr>
                   )}

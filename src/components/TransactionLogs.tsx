@@ -12,6 +12,7 @@ import {
 import { useInventory } from '../context/InventoryContext';
 import { useAuth } from '../context/AuthContext';
 import { StockTransaction, TransactionType } from '../types';
+import { formatNumber } from '../utils/formatters';
 
 export const TransactionLogs: React.FC = () => {
   const { transactions, items, recordMovement } = useInventory();
@@ -214,7 +215,7 @@ export const TransactionLogs: React.FC = () => {
                         <div className={`font-bold text-sm ${
                           isInbound ? 'text-emerald-400' : isOutbound ? 'text-indigo-400' : 'text-purple-400'
                         }`}>
-                          {isInbound ? `+${tx.quantity}` : isOutbound ? `-${tx.quantity}` : `${tx.quantity}`} {tx.unit}
+                          {isInbound ? `+${formatNumber(tx.quantity)}` : isOutbound ? `-${formatNumber(tx.quantity)}` : `${formatNumber(tx.quantity)}`} {tx.unit}
                         </div>
                       </td>
 
