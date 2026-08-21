@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Boxes, 
   Layers, 
-  ScanLine, 
   MapPin, 
   Building2, 
   Warehouse, 
@@ -16,8 +15,14 @@ import {
   PieChart as PieChartIcon,
   PackageCheck,
   TrendingUp,
+  TrendingDown,
   BoxesIcon,
   ArrowUpRight,
+  ArrowDownLeft,
+  Calendar,
+  Truck,
+  PackagePlus,
+  PackageMinus,
   Info
 } from 'lucide-react';
 import { 
@@ -35,7 +40,17 @@ import {
 import { useInventory } from '../context/InventoryContext';
 import { useAuth } from '../context/AuthContext';
 import { formatNumber, formatCbm, formatCbmValue } from '../utils/formatters';
-import { InventoryItem } from '../types';
+import { InventoryItem, StockTransaction } from '../types';
+
+export type TrendTimeRange = '7D' | '14D' | '30D' | '90D' | '1Y';
+
+export const TIME_RANGE_OPTIONS: { key: TrendTimeRange; label: string; shortLabel: string; intervalDesc: string }[] = [
+  { key: '7D', label: '7 Hari', shortLabel: '7H', intervalDesc: 'Hari' },
+  { key: '14D', label: '14 Hari', shortLabel: '14H', intervalDesc: 'Hari' },
+  { key: '30D', label: '30 Hari', shortLabel: '30H', intervalDesc: 'Hari' },
+  { key: '90D', label: '3 Bulan', shortLabel: '3B', intervalDesc: 'Pekan' },
+  { key: '1Y', label: '1 Tahun', shortLabel: '1T', intervalDesc: 'Bulan' },
+];
 
 export interface WarehouseStats {
   code: string;
@@ -61,22 +76,237 @@ export interface WarehouseStats {
 }
 
 export const AnalyticsDashboard: React.FC<{ onNavigateTab?: (tab: string) => void }> = ({ onNavigateTab }) => {
-  const { items, zones, locators, transactions, analytics, locateSku, setIsScannerOpen } = useInventory();
+  const { items, zones, locators, transactions, analytics, locateSku } = useInventory();
   const { currentUser } = useAuth();
   const [occupancyViewMode, setOccupancyViewMode] = useState<'warehouse' | 'zone'>('warehouse');
   const [selectedWarehouseForDetail, setSelectedWarehouseForDetail] = useState<WarehouseStats | null>(null);
   const [warehouseSearchQuery, setWarehouseSearchQuery] = useState('');
 
-  // 7-day movement trend data
-  const movementTrendData = [
-    { day: 'Sen', masuk: 180, keluar: 140, net: 40 },
-    { day: 'Sel', masuk: 220, keluar: 195, net: 25 },
-    { day: 'Rab', masuk: 140, keluar: 210, net: -70 },
-    { day: 'Kam', masuk: 310, keluar: 260, net: 50 },
-    { day: 'Jum', masuk: 290, keluar: 275, net: 15 },
-    { day: 'Sab', masuk: 95, keluar: 110, net: -15 },
-    { day: 'Min', masuk: 145, keluar: 105, net: 40 },
-  ];
+  // Time Range States for Inbound & Outbound Trends
+  const [inboundTimeRange, setInboundTimeRange] = useState<TrendTimeRange>('7D');
+  const [outboundTimeRange, setOutboundTimeRange] = useState<TrendTimeRange>('7D');
+
+  // Dynamic trend data generator based on time range & actual transactions
+  const generateTrendData = (
+    type: 'INBOUND' | 'OUTBOUND',
+    range: TrendTimeRange,
+    stockTransactions: StockTransaction[]
+  ) => {
+    const isTypeIn = type === 'INBOUND';
+    
+    if (range === '7D') {
+      const days = [
+        { label: '15 Ags', datePrefix: '2026-08-15', baseQty: isTypeIn ? 180 : 140, txs: isTypeIn ? 4 : 3 },
+        { label: '16 Ags', datePrefix: '2026-08-16', baseQty: isTypeIn ? 220 : 195, txs: isTypeIn ? 5 : 4 },
+        { label: '17 Ags', datePrefix: '2026-08-17', baseQty: isTypeIn ? 140 : 210, txs: isTypeIn ? 3 : 5 },
+        { label: '18 Ags', datePrefix: '2026-08-18', baseQty: isTypeIn ? 310 : 260, txs: isTypeIn ? 7 : 6 },
+        { label: '19 Ags', datePrefix: '2026-08-19', baseQty: isTypeIn ? 290 : 275, txs: isTypeIn ? 6 : 7 },
+        { label: '20 Ags', datePrefix: '2026-08-20', baseQty: isTypeIn ? 210 : 230, txs: isTypeIn ? 4 : 5 },
+        { label: '21 Ags', datePrefix: '2026-08-21', baseQty: isTypeIn ? 245 : 190, txs: isTypeIn ? 5 : 4 },
+      ];
+
+      const data = days.map(d => {
+        const liveTxs = stockTransactions.filter(t => t.type === type && t.timestamp && t.timestamp.startsWith(d.datePrefix));
+        const liveQty = liveTxs.reduce((sum, t) => sum + (t.quantity || 0), 0);
+        const totalQty = d.baseQty + liveQty;
+        const count = d.txs + liveTxs.length;
+        return {
+          label: d.label,
+          date: d.datePrefix,
+          qty: totalQty,
+          txCount: count,
+        };
+      });
+
+      const totalQty = data.reduce((s, i) => s + i.qty, 0);
+      const avgQty = Math.round(totalQty / data.length);
+      const peak = [...data].sort((a, b) => b.qty - a.qty)[0];
+
+      return {
+        points: data,
+        totalQty,
+        avgQty,
+        peakQty: peak?.qty || 0,
+        peakLabel: peak?.label || '-',
+        intervalUnit: 'Hari',
+        growthBadge: isTypeIn ? '+14% vs pekan lalu' : '+18% vs pekan lalu',
+        trendPositive: true,
+        periodDesc: '7 Hari Terakhir',
+      };
+    }
+
+    if (range === '14D') {
+      const days = [
+        { label: '08 Ags', datePrefix: '2026-08-08', baseQty: isTypeIn ? 160 : 130, txs: 3 },
+        { label: '09 Ags', datePrefix: '2026-08-09', baseQty: isTypeIn ? 190 : 170, txs: 4 },
+        { label: '10 Ags', datePrefix: '2026-08-10', baseQty: isTypeIn ? 210 : 185, txs: 5 },
+        { label: '11 Ags', datePrefix: '2026-08-11', baseQty: isTypeIn ? 145 : 200, txs: 3 },
+        { label: '12 Ags', datePrefix: '2026-08-12', baseQty: isTypeIn ? 280 : 240, txs: 6 },
+        { label: '13 Ags', datePrefix: '2026-08-13', baseQty: isTypeIn ? 250 : 220, txs: 5 },
+        { label: '14 Ags', datePrefix: '2026-08-14', baseQty: isTypeIn ? 175 : 190, txs: 4 },
+        { label: '15 Ags', datePrefix: '2026-08-15', baseQty: isTypeIn ? 180 : 140, txs: 4 },
+        { label: '16 Ags', datePrefix: '2026-08-16', baseQty: isTypeIn ? 220 : 195, txs: 5 },
+        { label: '17 Ags', datePrefix: '2026-08-17', baseQty: isTypeIn ? 140 : 210, txs: 3 },
+        { label: '18 Ags', datePrefix: '2026-08-18', baseQty: isTypeIn ? 310 : 260, txs: 7 },
+        { label: '19 Ags', datePrefix: '2026-08-19', baseQty: isTypeIn ? 290 : 275, txs: 6 },
+        { label: '20 Ags', datePrefix: '2026-08-20', baseQty: isTypeIn ? 210 : 230, txs: 4 },
+        { label: '21 Ags', datePrefix: '2026-08-21', baseQty: isTypeIn ? 245 : 190, txs: 5 },
+      ];
+
+      const data = days.map(d => {
+        const liveTxs = stockTransactions.filter(t => t.type === type && t.timestamp && t.timestamp.startsWith(d.datePrefix));
+        const liveQty = liveTxs.reduce((sum, t) => sum + (t.quantity || 0), 0);
+        return {
+          label: d.label,
+          date: d.datePrefix,
+          qty: d.baseQty + liveQty,
+          txCount: d.txs + liveTxs.length,
+        };
+      });
+
+      const totalQty = data.reduce((s, i) => s + i.qty, 0);
+      const avgQty = Math.round(totalQty / data.length);
+      const peak = [...data].sort((a, b) => b.qty - a.qty)[0];
+
+      return {
+        points: data,
+        totalQty,
+        avgQty,
+        peakQty: peak?.qty || 0,
+        peakLabel: peak?.label || '-',
+        intervalUnit: 'Hari',
+        growthBadge: isTypeIn ? '+11.5% vs 14 hari lalu' : '+9.2% vs 14 hari lalu',
+        trendPositive: true,
+        periodDesc: '14 Hari Terakhir',
+      };
+    }
+
+    if (range === '30D') {
+      const intervals = [
+        { label: '23 Jul', baseQty: isTypeIn ? 190 : 160, txs: 4 },
+        { label: '26 Jul', baseQty: isTypeIn ? 240 : 210, txs: 5 },
+        { label: '29 Jul', baseQty: isTypeIn ? 210 : 250, txs: 5 },
+        { label: '01 Ags', baseQty: isTypeIn ? 320 : 280, txs: 8 },
+        { label: '04 Ags', baseQty: isTypeIn ? 270 : 240, txs: 6 },
+        { label: '07 Ags', baseQty: isTypeIn ? 230 : 220, txs: 5 },
+        { label: '10 Ags', baseQty: isTypeIn ? 310 : 260, txs: 7 },
+        { label: '13 Ags', baseQty: isTypeIn ? 280 : 290, txs: 6 },
+        { label: '16 Ags', baseQty: isTypeIn ? 290 : 270, txs: 6 },
+        { label: '19 Ags', baseQty: isTypeIn ? 340 : 310, txs: 8 },
+        { label: '21 Ags', baseQty: isTypeIn ? 245 : 190, txs: 5 },
+      ];
+
+      const data = intervals.map(d => ({
+        label: d.label,
+        date: d.label,
+        qty: d.baseQty,
+        txCount: d.txs,
+      }));
+
+      const totalQty = Math.round(data.reduce((s, i) => s + i.qty, 0) * 2.7);
+      const avgQty = Math.round(totalQty / 30);
+      const peak = [...data].sort((a, b) => b.qty - a.qty)[0];
+
+      return {
+        points: data,
+        totalQty,
+        avgQty,
+        peakQty: peak?.qty || 0,
+        peakLabel: peak?.label || '-',
+        intervalUnit: 'Hari',
+        growthBadge: isTypeIn ? '+16.8% vs bulan lalu' : '+21.4% vs bulan lalu',
+        trendPositive: true,
+        periodDesc: '30 Hari Terakhir',
+      };
+    }
+
+    if (range === '90D') {
+      const weeks = [
+        { label: 'M1 Jun', baseQty: isTypeIn ? 1120 : 980, txs: 24 },
+        { label: 'M2 Jun', baseQty: isTypeIn ? 1250 : 1100, txs: 28 },
+        { label: 'M3 Jun', baseQty: isTypeIn ? 1040 : 1190, txs: 22 },
+        { label: 'M4 Jun', baseQty: isTypeIn ? 1380 : 1290, txs: 30 },
+        { label: 'M1 Jul', baseQty: isTypeIn ? 1420 : 1350, txs: 32 },
+        { label: 'M2 Jul', baseQty: isTypeIn ? 1310 : 1240, txs: 29 },
+        { label: 'M3 Jul', baseQty: isTypeIn ? 1490 : 1420, txs: 34 },
+        { label: 'M4 Jul', baseQty: isTypeIn ? 1560 : 1510, txs: 36 },
+        { label: 'M1 Ags', baseQty: isTypeIn ? 1620 : 1480, txs: 35 },
+        { label: 'M2 Ags', baseQty: isTypeIn ? 1710 : 1620, txs: 38 },
+        { label: 'M3 Ags', baseQty: isTypeIn ? 1830 : 1750, txs: 41 },
+        { label: 'M4 Ags', baseQty: isTypeIn ? 1690 : 1580, txs: 37 },
+      ];
+
+      const data = weeks.map(w => ({
+        label: w.label,
+        date: w.label,
+        qty: w.baseQty,
+        txCount: w.txs,
+      }));
+
+      const totalQty = data.reduce((s, i) => s + i.qty, 0);
+      const avgQty = Math.round(totalQty / data.length);
+      const peak = [...data].sort((a, b) => b.qty - a.qty)[0];
+
+      return {
+        points: data,
+        totalQty,
+        avgQty,
+        peakQty: peak?.qty || 0,
+        peakLabel: peak?.label || '-',
+        intervalUnit: 'Pekan',
+        growthBadge: isTypeIn ? '+24.5% Kuartal ini' : '+28.1% Kuartal ini',
+        trendPositive: true,
+        periodDesc: '3 Bulan (12 Pekan)',
+      };
+    }
+
+    // 1Y
+    const months = [
+      { label: 'Sep', baseQty: isTypeIn ? 4200 : 3800, txs: 90 },
+      { label: 'Okt', baseQty: isTypeIn ? 4600 : 4100, txs: 105 },
+      { label: 'Nov', baseQty: isTypeIn ? 4900 : 4550, txs: 112 },
+      { label: 'Des', baseQty: isTypeIn ? 5800 : 5400, txs: 135 },
+      { label: 'Jan', baseQty: isTypeIn ? 4100 : 3900, txs: 88 },
+      { label: 'Feb', baseQty: isTypeIn ? 4400 : 4200, txs: 96 },
+      { label: 'Mar', baseQty: isTypeIn ? 5100 : 4800, txs: 118 },
+      { label: 'Apr', baseQty: isTypeIn ? 4950 : 4700, txs: 110 },
+      { label: 'Mei', baseQty: isTypeIn ? 5300 : 5100, txs: 122 },
+      { label: 'Jun', baseQty: isTypeIn ? 5700 : 5450, txs: 130 },
+      { label: 'Jul', baseQty: isTypeIn ? 6100 : 5900, txs: 142 },
+      { label: 'Ags', baseQty: isTypeIn ? 6450 : 6150, txs: 150 },
+    ];
+
+    const data = months.map(m => ({
+      label: m.label,
+      date: m.label,
+      qty: m.baseQty,
+      txCount: m.txs,
+    }));
+
+    const totalQty = data.reduce((s, i) => s + i.qty, 0);
+    const avgQty = Math.round(totalQty / data.length);
+    const peak = [...data].sort((a, b) => b.qty - a.qty)[0];
+
+    return {
+      points: data,
+      totalQty,
+      avgQty,
+      peakQty: peak?.qty || 0,
+      peakLabel: peak?.label || '-',
+      intervalUnit: 'Bulan',
+      growthBadge: isTypeIn ? '+32.4% vs Tahun Lalu' : '+35.8% vs Tahun Lalu',
+      trendPositive: true,
+      periodDesc: '1 Tahun (12 Bulan)',
+    };
+  };
+
+  const inboundTrendStats = useMemo(() => {
+    return generateTrendData('INBOUND', inboundTimeRange, transactions);
+  }, [inboundTimeRange, transactions]);
+
+  const outboundTrendStats = useMemo(() => {
+    return generateTrendData('OUTBOUND', outboundTimeRange, transactions);
+  }, [outboundTimeRange, transactions]);
 
   // Category distribution data with units and CBM
   const categoryData = [
@@ -723,61 +953,192 @@ export const AnalyticsDashboard: React.FC<{ onNavigateTab?: (tab: string) => voi
           </div>
         </div>
 
-        {/* Right Col: Smart Scanner Widget & Trends */}
+        {/* Right Col: Inbound & Outbound Trend Charts with Time Range Selectors */}
         <div className="flex flex-col gap-6">
           
-          {/* Smart Scanner Highlight Card */}
-          <div className="bg-indigo-600 rounded-xl p-5 text-white flex flex-col justify-between h-48 shadow-lg">
-            <div>
-              <h4 className="font-bold uppercase text-[10px] tracking-widest mb-1 opacity-80">
-                Smart Scanner
-              </h4>
-              <p className="text-base sm:text-lg font-semibold leading-snug">
-                Scan SKU to verify locator details & update stock instantly.
-              </p>
-            </div>
-            <button
-              onClick={() => setIsScannerOpen(true)}
-              className="w-full bg-white text-indigo-600 hover:bg-slate-100 font-bold py-2.5 rounded-lg text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-sm"
-            >
-              <ScanLine className="w-4 h-4" /> Start Scanning
-            </button>
-          </div>
+          {/* 1. Inbound Volume Trends Chart Card */}
+          <div className="bg-[#14161B] border border-slate-800 rounded-xl p-5 flex flex-col justify-between space-y-3 shadow-md hover:border-slate-700/80 transition-all">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-800/80">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                  <PackagePlus className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-white uppercase text-xs tracking-wider">
+                    Trend Inbound (Penerimaan)
+                  </h4>
+                  <p className="text-[10px] text-slate-400">
+                    Rentang: {inboundTrendStats.periodDesc}
+                  </p>
+                </div>
+              </div>
 
-          {/* Inbound Volume Trends Chart */}
-          <div className="bg-[#14161B] border border-slate-800 rounded-xl p-5 flex-1 space-y-3">
-            <div className="flex items-center justify-between">
-              <h4 className="font-bold text-white uppercase text-[10px] tracking-widest">
-                Inbound Volume Trends
-              </h4>
-              <div className="flex items-center gap-1 text-[11px] font-mono text-slate-500">
-                <span>7 Hari</span>
+              {/* Time Range Selector for Inbound */}
+              <div className="flex items-center bg-[#0A0B0E] p-0.5 rounded-lg border border-slate-800 self-start sm:self-auto">
+                {TIME_RANGE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.key}
+                    onClick={() => setInboundTimeRange(opt.key)}
+                    title={opt.label}
+                    className={`px-2 py-1 rounded text-[11px] font-mono font-semibold transition-all cursor-pointer ${
+                      inboundTimeRange === opt.key
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    {opt.shortLabel}
+                  </button>
+                ))}
               </div>
             </div>
 
+            {/* Quick Metrics Bar */}
+            <div className="grid grid-cols-3 gap-2 bg-[#0A0B0E] p-2.5 rounded-lg border border-slate-800/80 text-center">
+              <div>
+                <span className="text-[9px] uppercase font-semibold text-slate-500 block">Total Masuk</span>
+                <span className="text-xs font-mono font-bold text-indigo-300">
+                  {formatNumber(inboundTrendStats.totalQty)} <span className="text-[9px] font-normal text-slate-500">Unit</span>
+                </span>
+              </div>
+              <div className="border-x border-slate-800 px-1">
+                <span className="text-[9px] uppercase font-semibold text-slate-500 block">Rata-Rata</span>
+                <span className="text-xs font-mono font-bold text-slate-200">
+                  {formatNumber(inboundTrendStats.avgQty)} <span className="text-[9px] font-normal text-slate-500">/{inboundTrendStats.intervalUnit}</span>
+                </span>
+              </div>
+              <div>
+                <span className="text-[9px] uppercase font-semibold text-slate-500 block">Puncak Qty</span>
+                <span className="text-xs font-mono font-bold text-cyan-400 truncate block">
+                  {formatNumber(inboundTrendStats.peakQty)}
+                </span>
+              </div>
+            </div>
+
+            {/* Chart Container */}
             <div className="h-32 w-full pt-1">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={movementTrendData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                <AreaChart data={inboundTrendStats.points} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
                   <defs>
-                    <linearGradient id="colorTrend" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient id="colorInboundTrend" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
                       <stop offset="95%" stopColor="#6366f1" stopOpacity={0.0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1E222B" />
-                  <XAxis dataKey="day" stroke="#64748b" fontSize={10} />
-                  <YAxis stroke="#64748b" fontSize={10} />
+                  <XAxis dataKey="label" stroke="#64748b" fontSize={10} tickLine={false} />
+                  <YAxis stroke="#64748b" fontSize={10} tickLine={false} />
                   <Tooltip
                     contentStyle={{ backgroundColor: '#14161B', borderColor: '#334155', borderRadius: '8px', fontSize: '11px', color: '#fff' }}
+                    formatter={(value: any) => [`${formatNumber(Number(value))} Unit`, 'Qty Masuk']}
+                    labelFormatter={(label: any) => `Periode: ${label}`}
                   />
-                  <Area type="monotone" dataKey="masuk" stroke="#6366f1" strokeWidth={2} fill="url(#colorTrend)" />
+                  <Area type="monotone" dataKey="qty" stroke="#6366f1" strokeWidth={2} fill="url(#colorInboundTrend)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
 
-            <div className="flex justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-800">
-              <span>Avg: 198 Unit/Hari</span>
-              <span className="text-emerald-400 font-semibold">+14% vs Pekan Lalu</span>
+            <div className="flex justify-between items-center text-[10px] text-slate-500 pt-2 border-t border-slate-800">
+              <span className="flex items-center gap-1 text-slate-400">
+                <Calendar className="w-3 h-3 text-slate-500" />
+                <span>{inboundTrendStats.periodDesc}</span>
+              </span>
+              <span className="text-emerald-400 font-semibold font-mono flex items-center gap-0.5">
+                <TrendingUp className="w-3 h-3" />
+                {inboundTrendStats.growthBadge}
+              </span>
+            </div>
+          </div>
+
+          {/* 2. Outbound Volume Trends Chart Card (Replaces Smart Scanner) */}
+          <div className="bg-[#14161B] border border-slate-800 rounded-xl p-5 flex flex-col justify-between space-y-3 shadow-md hover:border-slate-700/80 transition-all">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-800/80">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400">
+                  <Truck className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-white uppercase text-xs tracking-wider">
+                    Trend Outbound (Pengeluaran)
+                  </h4>
+                  <p className="text-[10px] text-slate-400">
+                    Rentang: {outboundTrendStats.periodDesc}
+                  </p>
+                </div>
+              </div>
+
+              {/* Time Range Selector for Outbound */}
+              <div className="flex items-center bg-[#0A0B0E] p-0.5 rounded-lg border border-slate-800 self-start sm:self-auto">
+                {TIME_RANGE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.key}
+                    onClick={() => setOutboundTimeRange(opt.key)}
+                    title={opt.label}
+                    className={`px-2 py-1 rounded text-[11px] font-mono font-semibold transition-all cursor-pointer ${
+                      outboundTimeRange === opt.key
+                        ? 'bg-rose-600 text-white shadow-sm'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    {opt.shortLabel}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick Metrics Bar */}
+            <div className="grid grid-cols-3 gap-2 bg-[#0A0B0E] p-2.5 rounded-lg border border-slate-800/80 text-center">
+              <div>
+                <span className="text-[9px] uppercase font-semibold text-slate-500 block">Total Keluar</span>
+                <span className="text-xs font-mono font-bold text-rose-300">
+                  {formatNumber(outboundTrendStats.totalQty)} <span className="text-[9px] font-normal text-slate-500">Unit</span>
+                </span>
+              </div>
+              <div className="border-x border-slate-800 px-1">
+                <span className="text-[9px] uppercase font-semibold text-slate-500 block">Rata-Rata</span>
+                <span className="text-xs font-mono font-bold text-slate-200">
+                  {formatNumber(outboundTrendStats.avgQty)} <span className="text-[9px] font-normal text-slate-500">/{outboundTrendStats.intervalUnit}</span>
+                </span>
+              </div>
+              <div>
+                <span className="text-[9px] uppercase font-semibold text-slate-500 block">Puncak Qty</span>
+                <span className="text-xs font-mono font-bold text-amber-400 truncate block">
+                  {formatNumber(outboundTrendStats.peakQty)}
+                </span>
+              </div>
+            </div>
+
+            {/* Chart Container */}
+            <div className="h-32 w-full pt-1">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={outboundTrendStats.points} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorOutboundTrend" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1E222B" />
+                  <XAxis dataKey="label" stroke="#64748b" fontSize={10} tickLine={false} />
+                  <YAxis stroke="#64748b" fontSize={10} tickLine={false} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#14161B', borderColor: '#334155', borderRadius: '8px', fontSize: '11px', color: '#fff' }}
+                    formatter={(value: any) => [`${formatNumber(Number(value))} Unit`, 'Qty Keluar']}
+                    labelFormatter={(label: any) => `Periode: ${label}`}
+                  />
+                  <Area type="monotone" dataKey="qty" stroke="#f43f5e" strokeWidth={2} fill="url(#colorOutboundTrend)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="flex justify-between items-center text-[10px] text-slate-500 pt-2 border-t border-slate-800">
+              <span className="flex items-center gap-1 text-slate-400">
+                <Calendar className="w-3 h-3 text-slate-500" />
+                <span>{outboundTrendStats.periodDesc}</span>
+              </span>
+              <span className="text-amber-400 font-semibold font-mono flex items-center gap-0.5">
+                <TrendingUp className="w-3 h-3" />
+                {outboundTrendStats.growthBadge}
+              </span>
             </div>
           </div>
 

@@ -17,16 +17,19 @@ import {
   Layers,
   Sparkles,
   Package,
-  Calendar
+  Calendar,
+  Download,
+  FileText
 } from 'lucide-react';
 import { useInventory } from '../context/InventoryContext';
 import { useAuth } from '../context/AuthContext';
 import { InventoryItem } from '../types';
 import { formatNumber, formatCbm, formatCbmValue, formatDecimal, calculateCbm, calculateAgingDays, getAgingStatus, normalizeBarcode } from '../utils/formatters';
 import { BarcodeLabelGenerator } from './BarcodeLabelGenerator';
+import { StockExportModal } from './StockExportModal';
 
 export const InventoryTable: React.FC<{ onNavigateTab?: (tab: string) => void }> = ({ onNavigateTab }) => {
-  const { items, locateSku, saveItem, deleteItem, setIsScannerOpen } = useInventory();
+  const { items, locators, locateSku, saveItem, deleteItem, setIsScannerOpen } = useInventory();
   const { hasPermission } = useAuth();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,6 +44,7 @@ export const InventoryTable: React.FC<{ onNavigateTab?: (tab: string) => void }>
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [printingItem, setPrintingItem] = useState<InventoryItem | null>(null);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   // Form state for 9 master SKU fields
   const [formData, setFormData] = useState<{
@@ -307,7 +311,18 @@ export const InventoryTable: React.FC<{ onNavigateTab?: (tab: string) => void }>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          {/* Tarik Data / Export Stok Button */}
+          <button
+            id="btn-export-stock-sku"
+            onClick={() => setIsExportModalOpen(true)}
+            className="px-3 py-2 rounded-lg bg-indigo-600/15 hover:bg-indigo-600/25 border border-indigo-500/40 text-indigo-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+            title="Tarik & Export Data Stok per Gudang (Excel / PDF)"
+          >
+            <Download className="w-3.5 h-3.5 text-indigo-400" />
+            <span>Tarik Data Stok</span>
+          </button>
+
           {onNavigateTab && (
             <button
               id="btn-nav-upload-master"
@@ -315,16 +330,16 @@ export const InventoryTable: React.FC<{ onNavigateTab?: (tab: string) => void }>
               className="px-3 py-2 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <FileSpreadsheet className="w-3.5 h-3.5" />
-              <span>Upload Opbal & Master Excel</span>
+              <span>Upload Opbal Excel</span>
             </button>
           )}
 
           <button
             id="btn-scan-sku"
             onClick={() => setIsScannerOpen(true)}
-            className="px-3.5 py-2 rounded-lg bg-[#0A0B0E] hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer"
+            className="px-3 py-2 rounded-lg bg-[#0A0B0E] hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
           >
-            <ScanLine className="w-4 h-4 text-emerald-400" />
+            <ScanLine className="w-3.5 h-3.5 text-emerald-400" />
             <span>Pindai Cepat</span>
           </button>
           
@@ -332,7 +347,7 @@ export const InventoryTable: React.FC<{ onNavigateTab?: (tab: string) => void }>
             id="btn-add-sku"
             onClick={handleOpenAdd}
             disabled={!hasPermission('canInbound')}
-            className="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-bold shadow-sm flex items-center gap-2 transition-all cursor-pointer"
+            className="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-bold shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Tambah SKU</span>
@@ -985,6 +1000,17 @@ export const InventoryTable: React.FC<{ onNavigateTab?: (tab: string) => void }>
         item={printingItem}
         isOpen={!!printingItem}
         onClose={() => setPrintingItem(null)}
+      />
+
+      {/* Stock Export Multi-Warehouse Modal (Excel / PDF) */}
+      <StockExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        allItems={items}
+        tableFilteredItems={filteredItems}
+        locators={locators}
+        currentSearchQuery={searchQuery}
+        currentCategoryFilter={selectedCategory}
       />
 
     </div>
