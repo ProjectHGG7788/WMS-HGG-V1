@@ -1,0 +1,7 @@
+{
+  "name": "WMS Gudang Pintar",
+  "description": "Sistem Manajemen Inventaris Gudang Real-time dengan Pelacak Lokasi SKU, Barcode Scanner, dan Dashboard Analitik Otomatis",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
